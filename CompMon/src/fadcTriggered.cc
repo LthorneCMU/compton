@@ -40,7 +40,7 @@ void fadcTriggered::newRun(){
 //-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
 //Define histos
 int fadcTriggered::DefineHistos() {
-  int fullscale=100000;
+   int fullscale=100000;
   int offset=-1000;
   //  int smallscale=5000;
   //  int smalloffset=-1000;
@@ -70,31 +70,35 @@ int fadcTriggered::DefineHistos() {
 			 5000,offset,fullscale+offset);
   //
   // Histograms that count triggers sorted by Laser State
-  hTrig_MPS=new TH1F("hTrig_MPS",
-			       "Num MPS  vs Laser State",10,0,10);
-  labelLaserSortedHistos(hTrig_MPS);
-
-
+  // MODIFIED to hMPS stuff 6/18/15 gbf
   //
-  hTrig_MPS_BeamOn=new TH1F("hTrig_MPS_BeamOn",
-			       "Num MPS with Beam On  vs Laser State",10,0,10);
-  labelLaserSortedHistos(hTrig_MPS_BeamOn); //set labels of x-axis
+  hMPS_BCM=new TH1F("hMPS_BCM","Calibrated BCM for each MPS",1000.,0.,200.);
+  hMPS_BCM_BeamOn=new TH1F("hMPS_BCM_BeamOn",
+      "Calibrated BCM for each MPS",1000.,0.,200.);
+  hMPS_SpinState=new TH1F("hMPS_SpinState",
+			       "Num MPS  vs Spin State",10,0,10);
+  labelSpinSortedHistos(hMPS_SpinState);
+  //
+  hMPS_SpinState_BeamOn=new TH1F("hMPS_SpinState_BeamOn",
+			       "Num MPS with Beam On  vs Spin State",10,0,10);
+  labelSpinSortedHistos(hMPS_SpinState_BeamOn); //set labels of x-axis
  //
-  hTrig_BCM=new TH1F("hTrig_BCM", "BCM  vs Laser State",10,0,10);
-  labelLaserSortedHistos(hTrig_BCM);  //set labels of x-axis
+  hMPS_BCM_SummedBySpinState=new TH1F("hTrig_BCM_SummedBySpinState",
+     "BCM summed for each Spin State",10,0,10);
+  labelSpinSortedHistos(hMPS_BCM_SummedBySpinState);  //set labels of x-axis
   //
   hTrig_Trigs_Accepted=new TH1F("hTrig_Trig_.Accepted",
-				 "Num Trig Evnts Accepted vs Laser State",10,0,10);
- labelLaserSortedHistos(hTrig_Trigs_Accepted);
+				 "Num Trig Evnts Accepted vs Spin State",10,0,10);
+ labelSpinSortedHistos(hTrig_Trigs_Accepted);
   //
   hTrig_Trigs_Scaler=new TH1F("hTrig_Trigs_Scaler",
-				 "Num Triggers vs Laser State",10,0,10);
- labelLaserSortedHistos(hTrig_Trigs_Scaler);
+				 "Num Triggers vs Spin State",10,0,10);
+ labelSpinSortedHistos(hTrig_Trigs_Scaler);
   //
   //normalized histos
   hNorm_Trigs_Scaler=new TH1F("hNorm_Trigs_Scaler",
-				 "Num Triggers per MPS vs Laser State",10,0,10);
-  labelLaserSortedHistos(hNorm_Trigs_Scaler);
+				 "Num Triggers per MPS vs Spin State",10,0,10);
+  labelSpinSortedHistos(hNorm_Trigs_Scaler);
 
   hNorm_sums_subtracted=new TH1F("hNorm_sums_subtracted",
 			      "Background Subtracted Triggered Pulses",
@@ -105,6 +109,7 @@ int fadcTriggered::DefineHistos() {
   //
   //waveform snapshop histos
   hTrig_wf=new TH1F("hTrig_wf","Sum of Sampled Waveforms",500,0,500);
+  hTrig_wf_Ped=new TH1F("hTrig_wf_Ped","Early Channels in Snapshots",200,2200,2400);
   return 0;
 }
 //++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
@@ -123,7 +128,7 @@ int fadcTriggered::DefineTriggeredTree(comptonStatus* theComptonStatus){
   theComptonStatus->DefineStatusBranches(snapshotsTree);
   return 0;
 }
-void fadcTriggered::labelLaserSortedHistos(TH1F* histo){
+void fadcTriggered::labelSpinSortedHistos(TH1F* histo){
   //helper function to DefineHisos
   //
   TAxis* pAxis= histo->GetXaxis();
@@ -131,9 +136,11 @@ void fadcTriggered::labelLaserSortedHistos(TH1F* histo){
   pAxis->SetBinLabel(2,"LP");
   pAxis->SetBinLabel(3,"RN");
   pAxis->SetBinLabel(4,"RP");
-  pAxis->SetBinLabel(5,"Roff");
-  pAxis->SetBinLabel(6,"Loff");
-  pAxis->SetBinLabel(7,"Unk");
+  pAxis->SetBinLabel(5,"LNoff");
+  pAxis->SetBinLabel(6,"LPoff");
+  pAxis->SetBinLabel(7,"RNoff");
+  pAxis->SetBinLabel(8,"RPoff");
+  pAxis->SetBinLabel(9,"Unk");
   return;
 }
 
@@ -148,37 +155,18 @@ int fadcTriggered::DoSummedPulses(vmeauxdata* theVMEauxdata,
     double PedCorrection=numInSum*theParams->GetPedestal() - originalPedCorr;
     int numTriggersAccepted=theFADCdata->GetSumsNumberTriggersSummed(chan);
     int numTriggers=theVMEauxdata->GetTriggerScaler();
-
     mpsCount=theComptonStatus->GetCountMPS();
     helicityState=theComptonStatus->GetHelicityState();
     laserState=theComptonStatus->GetLaserState();
     float bcm=theComptonStatus->GetCalibratedBCM();
     bool beamOn= theComptonStatus->IsBeamOn();
-    int sort;  
-    if(laserState==LASER_LEFT){
-      if(helicityState==0){
-	sort=0;
-      }else{
-	sort=1;
-      }
-    }else if(laserState==LASER_RIGHT){
-      if(helicityState==0){
-	sort=2;
-      }else{
-	sort=3;
-      }
-    }else if (laserState==LASER_LEFTOFF){
-      sort=4;
-    }else if (laserState==LASER_RIGHTOFF){	
-      sort=5;
-    }else{
-      sort=6;
-    }
+    int sort=theComptonStatus->GetCombinedSpinState();  //sortlaser polarization and beam helicity, etc.
     //prepare to ignore LASER_UNKNOWN data
     bool laserOn= (laserState==LASER_RIGHT||laserState==LASER_LEFT);
     bool laserOff= (laserState==LASER_RIGHTOFF||laserState==LASER_LEFTOFF);
 
-    hTrig_MPS->Fill(sort);    //MPS counts by laser cycle
+    hMPS_SpinState->Fill(sort);    //MPS counts sorted by laser cycle
+    hMPS_BCM->Fill(bcm);     //calibrated bcm
     //following sorted fills are only for BEAM ON condiation
     if(beamOn){
       if(laserOn){
@@ -188,11 +176,12 @@ int fadcTriggered::DoSummedPulses(vmeauxdata* theVMEauxdata,
 	mpsLaserOffCount++;
 	bcmLaserOffSum+=bcm;
       }
-      hTrig_MPS_BeamOn->Fill(sort);
+      hMPS_BCM_BeamOn->Fill(bcm);
+      hMPS_BCM_SummedBySpinState->Fill(sort,bcm); //fill weighted by bcm value
+      hMPS_SpinState_BeamOn->Fill(sort);
       hTrig_Trigs_Scaler->Fill( sort,numTriggers);
       hTrig_Trigs_Accepted->Fill(sort,numTriggersAccepted);
       hTrig_numSums->Fill(numTriggersAccepted);
-      hTrig_BCM->Fill(sort,bcm); //
       for(int i=0; i<numTriggersAccepted; i++){
 	sumVal=theFADCdata->GetSums(chan,i)+PedCorrection;  //move to roottree slot
 	hTrig_sums_All->Fill(sumVal);
@@ -213,12 +202,15 @@ int fadcTriggered::DoNormalizedHistos(){
   // calculates normalized histos (from triggered data)
   //really stupid way to copy histogram.  (Must be a better way)
   hNorm_Trigs_Scaler->Add(hTrig_Trigs_Scaler,hTrig_Trigs_Scaler,1.,0.);
-  hNorm_Trigs_Scaler->Divide(hTrig_MPS); //normalizer per MPS for each laser state
+ //normalizer per MPS for each laser state
+  hNorm_Trigs_Scaler->Divide(hMPS_SpinState_BeamOn);
 
   //
   if(bcmLaserOffSum>0.0){
     Double_t C1=1.0;
-    Double_t C2= -bcmLaserOnSum/(bcmLaserOffSum);  //note negative sign
+    //    Double_t C2= -bcmLaserOnSum/(bcmLaserOffSum);  //note negative sign
+    //Not clear if bcm sums are good.  Lets try just counting MPSs
+    Double_t C2= -float(mpsLaserOnCount)/float(mpsLaserOffCount);
     hNorm_sums_subtracted->Add(hTrig_sums_laserOn,hTrig_sums_laserOff,C1,C2);
     // build asymmetry histogram
     //start by building denominator
@@ -262,6 +254,9 @@ int fadcTriggered::DoSampledWaveforms(fadcdata *theFADCdata,
       for(int i=0; i<NumSamples; i++){
  	snapshot[i]=data[i];
 	hTrig_wf->Fill(i,data[i]);  //use weighted fill
+      }
+      for(int i=0; i<50; i++){
+	hTrig_wf_Ped->Fill(data[i]);  //histogram early channels (Pedestal info)
       }
       snapshotsTree->Fill();
     }

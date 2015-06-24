@@ -49,7 +49,7 @@ class fadcAccums {
   comptonParams* theParams;   //pointer to parameter 
   //
   //Variables output to triggeredWise root tree
-  TTree* quadWiseTree;
+  TTree* mpsWiseTree;
   //accumulator data
   int nacc[8];
   int64_t accraw[8];  //raw acumuilator data

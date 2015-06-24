@@ -27,6 +27,7 @@ int comptonStatus::DefineStatusBranches(TTree* mytree){
 // External-data branches containing status info shared by all tree
   mytree->Branch("helicityState", &helicityState, "helicityState/I");
   mytree->Branch("laserState", &currentLaserState, "laserstate/I");
+  mytree->Branch("combinedSpinState", &currentSpinState, "CombinedSpinState/I");
   mytree->Branch("beamOn", &beamOn, "beamOn/I");
   mytree->Branch("mpsCoda", &mpsCoda, "mpsCoda/I"); //mps # read from Coda header
   mytree->Branch("mpsSignal", &mpsSignal, "mpsSignal/I"); //mps signal state
@@ -149,19 +150,62 @@ bool comptonStatus::newMPS(int codaEventNumber, fadcdata* theFADCdata, vmeauxdat
   calbcm = (float) bcmscaler/ (float)clock_diff;
   calbcm*= 4E7*theParams->GetBCMCalibration();
   beamOn=calbcm > (theParams->GetHighBCMCutoff());
-  /*
-  printf("mpsScaler %d\n",mpsScaler);
-  printf("mpsSignal %d\n",mpsSignal);
-  printf("dithering %d\n",dithering);
-  printf("rtcavpol  %f\n",rtcavpol);
-  printf("cavityPowerBit %d\n",cavityPowerBit);
-  printf("rtcavPower  %f\n",rtcavpow);
-  printf("cavityPowerScaler %d\n",theAuxData->GetCavityPowerScaler());
-  printf("clock_diff %d\n",clock_diff);
-  printf("CavCalibration %f\n",theParams->GetCavPowCalibration());
-  // determine laser state, where we are in a laser triplet, etc.
-  */
   bool transition=SetLaserState(); //determine laser state
+
+    if(currentLaserState==LASER_LEFT){
+      if(helicityState==0){
+	currentSpinState=SPIN_LN;
+      }else{
+	currentSpinState=SPIN_LP;
+      }
+    }else if(currentLaserState==LASER_RIGHT){
+      if(helicityState==0){
+	currentSpinState=SPIN_RN;
+      }else{
+	currentSpinState=SPIN_LN;
+      }
+    }else if (currentLaserState==LASER_LEFTOFF){
+      if(helicityState==0){
+	currentSpinState=SPIN_LNOFF;
+      }else{
+	currentSpinState=SPIN_LPOFF;
+      }
+    }else if (currentLaserState==LASER_RIGHTOFF){	
+      if(helicityState==0){
+	currentSpinState=SPIN_RNOFF;
+      }else{
+	currentSpinState=SPIN_RPOFF;
+      }
+    }else{
+      currentSpinState=SPIN_UNKNOWN;
+    }
+
+
+  /*
+  printf("comptonStatus Dump \n");
+
+  printf("mpsCoda  (from Coda Event Header) %d\n",mpsCoda);
+  printf("mpsScaler)from VME Scalar       ) %d\n",mpsScaler);
+
+  printf("Status bits \n");
+  printf("   mpsSignal (mps bit) %d\n",mpsSignal);
+  printf("   dithering           %d\n",dithering);
+  printf("   rtcavpol             %f\n",rtcavpol);
+  printf("   cavityPowerBit       %d\n",cavityPowerBit);
+  printf("   beamOn               %d\n",beamOn);
+
+  printf("integers: \n");
+  printf("   bcmscaler                     %d\n",bcmscaler);
+  printf("   calbcm (calibrated bcmscaler) %f\n",calbcm);
+  printf("   rtcavPower                    %d\n",rtcavpow);
+  printf("   cavityPowerScaler             %d\n",theAuxData->GetCavityPowerScaler());
+  printf("   clock_diff                    %d\n",clock_diff);
+  printf("   CavCalibration                %f\n",theParams->GetCavPowCalibration());
+
+  */
+  // determine laser state, where we are in a laser triplet, etc.
+  
+
   //transfer in scalers.
   test0 = theAuxData->GetIPScaler(0);
   test1 = theAuxData->GetIPScaler(1);

@@ -21,15 +21,15 @@ NAME    = compmon
 #   These are the standard libraries, include paths and compiler settings
 # -------------------------------------------------------------------------
 
-BINDIR		= /home/compton/franklin/newCompton/bin
+BINDIR		= /home/lthorne/bin
 
 LIBS		= $(shell $(ROOTSYS)/bin/root-config --libs)
 
 GLIBS		= $(ROOTGLIBS) -L/usr/X11R6/lib -lXpm -lX11
 
 #EVIO_LIB	= libevio.a
-#EVIO		= /home/franklin/HallA/newCompton/evio/lib
-EVIO		= /home/compton/evio/Linux-x86_64/lib
+EVIO		= /home/franklin/HallA/newCompton/evio/lib
+#EVIO		= /home/compton/evio/Linux-x86_64/lib
 EVIO_LIB	= $(EVIO)/libevio.so
 
 ALL_LIBS	= $(EVIO_LIB) $(GLIBS) $(ROOTLIBS)

@@ -31,7 +31,8 @@
 
 enum laserStateFlag_t {LASER_RIGHT, LASER_LEFT, LASER_RIGHTOFF, LASER_LEFTOFF,
 		       LASER_UNKNOWN};
-
+enum combinedSpinFlag_t {SPIN_LN,SPIN_LP,SPIN_RN,SPIN_RP,
+			 SPIN_LNOFF,SPIN_LPOFF,SPIN_RNOFF,SPIN_RPOFF,SPIN_UNKNOWN};
 
 class comptonStatus {
  public:
@@ -43,6 +44,8 @@ class comptonStatus {
   int GetHelicityState();  //returns -1 if unknown, otherwise 0 or 1 
   int GetCountMPS(){ return countMPS;};
   int GetLaserState(){ return currentLaserState;};
+  int GetCombinedSpinState() {return currentSpinState;};  //encoded helicitdy and LaserState info
+						     
   bool SetLaserState();
   float GetCalibratedBCM(){ return calbcm;};
   bool IsBeamOn(){return beamOn;};
@@ -83,6 +86,7 @@ class comptonStatus {
   int laserStateFound[6];  //tracks which laser states encountered within laser cycle
   laserStateFlag_t previousLaserState;
   laserStateFlag_t currentLaserState;
+  combinedSpinFlag_t currentSpinState; //combined helicity and laser polarization 
   laserStateFlag_t knownLaserState;
   laserStateFlag_t lastKnownLaserState;
   int laser_good;

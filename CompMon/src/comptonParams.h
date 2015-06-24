@@ -26,6 +26,8 @@ class comptonParams
     double sum_pedchannel;
     double pedestal_verticalfinger;
     double pedestal_horizontalfinger;
+    double accumHistoRange;   //used for XMAX of accumulator histograms
+    double accumScaledRange;  //for scaled accumulator histograms
     double sthr1;				// near-pedestal sampling threshold
     double sthr2;				// far-pedestal sampling threshold
     int pulse_sep;				// enforced sample separation between pulses
@@ -63,6 +65,8 @@ class comptonParams
     double GetPedestal() {return ped_value;};
     double GetPedTop()  {return pedestal_verticalfinger;};
     double GetPedSide() {return pedestal_horizontalfinger;};
+    double GetAccumHistoRange() {return accumHistoRange;};
+    double GetAccumScaledRange() {return accumScaledRange;};
     double GetSamplingNearThreshold() {return sthr1;};
     double GetSamplingFarThreshold() {return sthr2;};
     int GetPulseSeparation() {return pulse_sep;};
